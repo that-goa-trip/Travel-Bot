@@ -2,92 +2,163 @@ from crewai import Agent, Task, Crew
 from langchain.agents import load_tools
 from openai import OpenAI
 from dotenv import load_dotenv
+import json
+from tools import tools
+from tool_api import ToolApis
 
 load_dotenv()
 
 llm = OpenAI(api_key="anything", base_url="http://0.0.0.0:4001")
+tool_apis = ToolApis()
 
-
-system_prompt = """Role: Travel Agent
+base_system_prompt = """Role: Travel Agent named Dora
 Goal: Help the group with planning their trip
 
+Current Year: 2024
+
+Must Required:
+You need to be conversational and most importantly you need to resolve disputes and navigate the group to a common consensus.
+Make sure you move forward in the convesrsation, and do not repeat your answers.
+
 Backstory:
-    
-You're an amazing travel agent that helps people plan their trip. Here is the travel journey you need to follow:
+You're an amazing travel agent that helps people plan their trip.
+Introduce yourself as Dora, the travel agent.
 
-1. Initial Consultation
-Purpose: Understand the group's preferences and requirements.
+Here is the travel journey you need to follow:
 
-Discuss travel goals, interests, and budget.
-Determine the destination(s).
-Identify preferred travel dates and duration.
-Assess special needs or considerations (e.g., dietary restrictions, accessibility).
+1. Initial Planning and Idea Generation
 
-2. Research and Proposal
-Purpose: Provide options and recommendations.
+Determine the purpose of the trip (vacation, business, adventure, etc.).
+Choose the destination(s).
+Decide on the duration of the trip.
+Research the destination for attractions, culture, climate, and local events.
+Budgeting
 
-Research destinations, accommodations, and activities.
-Prepare a preliminary itinerary with various options.
-Present travel packages, including flights, accommodations, and activities.
-Discuss travel insurance and any necessary vaccinations or visas.
+2. Estimate the total budget for the trip.
+Allocate funds for major expenses such as transportation, accommodation, food, activities, and shopping.
+Set aside contingency funds for emergencies or unexpected costs.
+Travel Documentation
 
-3. Itinerary Finalization
-Purpose: Agree on the final travel plan.
+3. Suggest flights.
+Arrange for local transportation at the destination (car rentals, public transport passes, etc.).
+Plan airport transfers or transportation to/from major hubs.
+Accommodation Booking
 
-Finalize the itinerary based on the group's feedback.
-Confirm accommodations, activities, and transportation.
-Create a detailed daily schedule, including leisure time.
+4. Research and choose accommodation options (hotels, airbnbs, hostels, vacation rentals, etc.).
+Book accommodation based on preferences and budget.
+Consider location, amenities, and reviews.
+Itinerary Planning
 
-4. Booking
-Purpose: Secure all travel arrangements.
+5. Create a daily itinerary outlining major activities and sights.
+Schedule tours, activities, and experiences.
+Make reservations for popular attractions or restaurants if needed.
+Do not mention this in every message. Remeber the itinerary and only mention it at the end.
 
-Book flights, accommodations, and activities.
-Arrange local transportation (e.g., car rentals, airport transfers).
-Purchase travel insurance.
-Make reservations for special events or dining.
+Send thank-you notes for future bookings. 
 
-5. Documentation
-Purpose: Ensure all necessary documents are prepared and organized.
-
-Provide a comprehensive travel packet with itinerary, tickets, and vouchers.
-Ensure travelers have valid passports and visas.
-Supply emergency contact information and travel insurance details.
-
-6. Pre-Departure Preparation
-Purpose: Prepare travelers for their trip.
-
-Share packing lists and destination-specific advice.
-Confirm all bookings and reservations.
-Provide tips on local customs, language, and currency.
-Arrange a pre-trip meeting to address last-minute questions and concerns.
-
-7. Travel Support
-Purpose: Offer support during the trip.
-
-Provide a contact number for emergencies or issues during travel.
-Assist with changes or problems that arise (e.g., flight delays, accommodation issues).
-Check-in periodically to ensure the trip is going smoothly.
-
-8. Post-Trip Follow-Up
-Purpose: Gather feedback and address any post-trip issues.
-
-Contact the group to discuss their experience.
-Resolve any complaints or issues that occurred during the trip.
-Request feedback to improve future travel planning services.
-Send thank-you notes or offer discounts for future bookings. 
+Do not include UserName: travel agent
+STRICLTY keep the responses short and to the point.
 """
 
-def add_system_prompt(messages):
-    messages.append({"role": "system", "content": system_prompt})
-    return messages
+def add_system_prompt(messages, system_prompt):
+    all_messages = []
+    all_messages.append({"role": "system", "content": system_prompt})
+    for message in messages:
+        all_messages.append(message)
+    return all_messages
 
 def run_agent(messages):
-    messages = add_system_prompt(messages)
+    messages_for_gpt = add_system_prompt(messages, base_system_prompt)
     response = llm.chat.completions.create(
-        model="llama",
-        messages=messages
+        model="gpt4o",
+        messages=messages_for_gpt,
+        tools=tools,
+        # tool_choice="required"
     )
     print(response)
+    try:
+        tool_calls = response.choices[0].message.tool_calls
+    except Exception as e:
+        try:
+            if response.choices[0].message.content:
+                return response.choices[0].message.content
+        except Exception as e:
+            content = "Oops, Something went wrong! Try again in sometime..."
+            return content
+    tool_request_responses = []
+    if tool_calls:
+        print(tool_calls)
+        
+        for tool_call in tool_calls:
+            tool_name = tool_call.function.name
+            tool_kwargs = json.loads(tool_call.function.arguments)
+            tool = tool_apis.get_tool(tool_name)
+            results = tool(
+                **tool_kwargs,
+            )
+            append_response = f"Tool: {tool_name}\nResponse: {results}"
+            if len(append_response.split(" ")) > 4096:
+                append_response = " ".join(append_response.split(" ")[:4096])
+            print(f"Tool: {tool_name}\nResponse: {results}")
+            tool_request_responses.append(append_response)
+
+    tool_calling = True
+    tool_call_count = 0
+    while tool_calling:
+        print(tool_call_count)
+        string_tool_request_responses = str(tool_request_responses)
+        if len(string_tool_request_responses.split(" ")) > 8092:
+            string_tool_request_responses = " ".join(string_tool_request_responses.split(" ")[:8092])
+        if tool_call_count < 3:
+            tool_response_prompt = f"""Following are the Tool Calls you asked for and their responses:
+    {string_tool_request_responses}\n You can call another tool or end the conversation."""
+        else:
+            tool_response_prompt = f"""Following are the Tool Calls you asked for and their responses:
+    {string_tool_request_responses}\n end the conversation with the information you've fetched."""
+        
+        system_prompt = f"""{tool_response_prompt} \n {base_system_prompt}"""
+        # print(messages, system_prompt)
+        messages_for_gpt = add_system_prompt(messages, system_prompt)
+        # print(messages)
+        if tool_call_count < 2:
+            response = llm.chat.completions.create(
+                model="gpt4o",
+                messages=messages_for_gpt,
+                tools=tools,
+            )
+        else:
+            response = llm.chat.completions.create(
+                model="gpt4o",
+                messages=messages_for_gpt,
+            )
+
+        print(response)
+        try:
+            tool_calls = response.choices[0].message.tool_calls
+            tool_call_count += 1
+            if tool_calls:
+                for tool_call in tool_calls:
+                    tool_name = tool_call.function.name
+                    tool_kwargs = json.loads(tool_call.function.arguments)
+                    tool = tool_apis.get_tool(tool_name)
+                    results = tool(
+                        **tool_kwargs,
+                    )
+                    append_response = f"Tool: {tool_name}\nResponse: {results}"
+                    if len(append_response.split(" ")) > 4096:
+                        append_response = " ".join(append_response.split(" ")[:4096])
+                    tool_request_responses.append(append_response)
+            else:
+                print(f"Tool Calls: {tool_calls}")
+                print(f"Response: {response.choices[0].message.content}")
+                tool_calling = False
+                content = response.choices[0].message.content
+                return content
+        except Exception as e:
+            print(f"Error: {e}")
+            tool_calling = False
+            content = response.choices[0].message.content
+            return content
     
     try:
         content = response.choices[0].message.content

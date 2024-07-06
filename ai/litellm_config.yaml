@@ -1,8 +1,8 @@
 model_list:
-  # - model_name: gpt-4o # user-facing model alias
-  #   litellm_params: # all params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
-  #     model: "openai/gpt4o"
-  #     api_key: os.environ/OPENAI_API_KEY
+  - model_name: gpt4o # user-facing model alias
+    litellm_params: # all params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
+      model: "openai/gpt-4o"
+      api_key: os.environ/OPENAI_API_KEY
   - model_name: llama
     litellm_params:
       model: "groq/llama3-8b-8192"

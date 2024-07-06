@@ -16,10 +16,17 @@ def pong():
 @app.post("/process")
 def process(data: dict):
     message_history = data.get("message_history", {})
-    response = run_agent(message_history)
+    print(message_history)
+    try:
+        response = run_agent(message_history)
+    except Exception as e:
+        response = f"Oops, Something went wrong! Try again in sometime..."
+
+    if "UserName: travel agent, Message:" in response:
+        response = response.replace("UserName: travel agent, Message:", "")
     final_response = {"message": response}
     return json_response(final_response)
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=3002)
+    uvicorn.run(app, host="localhost", port=3002)
