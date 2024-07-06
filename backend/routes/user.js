@@ -29,17 +29,22 @@ router.post("/user/join", async (req, res) => {
       await newMember.save();
       console.log(newMember);
       const emitData = {
-        user_id: userEntry._id,
-        userName: userEntry.userName,
+        user_id: userEntry?._id,
+        userName: userEntry?.userName,
         joinedOn: newMember.joinedOn,
       };
+      await socketEmit({
+        group_id: groupEntry._id,
+        event: "new_member",
+        data: emitData,
+      });
     } catch (error) {
       console.log("Member not created", error);
     }
 
     console.log({ group: groupEntry, user: userEntry });
 
-    res.status(201).send({ group: groupEntry, user: userEntry });
+    res.status(200).send({ group: groupEntry, user: userEntry });
   } catch (error) {
     console.error("error in joining", error);
     res.status(400).send(error);

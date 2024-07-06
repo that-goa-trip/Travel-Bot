@@ -6,6 +6,18 @@ const connectDB = require("./database");
 const userRoutes = require("./routes/user");
 const groupRoutes = require("./routes/group");
 
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+  // Perform any necessary cleanup, logging, or notifications
+  // Optionally, restart the application or perform other recovery actions
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
+  // Perform any necessary cleanup, logging, or notifications
+  // Optionally, restart the application or perform other recovery actions
+});
+
 //Create app
 const app = express();
 

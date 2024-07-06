@@ -1,3 +1,4 @@
+const { default: axios } = require("axios");
 const express = require("express");
 const { user, group, groupMessage, groupMembers } = require("../models");
 const { socketEmit } = require("../utils/socket");
@@ -7,7 +8,7 @@ const router = express.Router();
 // Send message
 router.post("/group/send-message", async (req, res) => {
   try {
-    const { user_id, group_id, message, unique_message_id } = req.body;
+    const { user_id, group_id, message, messagesContext } = req.body;
     let userEntry = await user.findById(user_id);
     if (!userEntry) throw new Error("User not found");
     let groupEntry = await group.findById(group_id);
@@ -25,10 +26,11 @@ router.post("/group/send-message", async (req, res) => {
 
     console.log("newMessage", newMessage);
     const emitData = {
-        _id: newMessage._id,
+      _id: newMessage._id,
       group_id,
       type: "message",
       sender: "user",
+      message: newMessage.message,
       timestamp: newMessage.timestamp,
       user_id: {
         _id: user_id,
@@ -42,11 +44,47 @@ router.post("/group/send-message", async (req, res) => {
       data: emitData,
     });
 
+    try {
+      const result = await axios.post(
+        `https://eagerly-natural-ox.ngrok-free.app/process`,
+        {
+          message_history: messagesContext,
+        }
+      );
+      if (result?.data?.message) {
+        const aiResponseMessage = new groupMessage({
+          message: result.data.message,
+          group_id,
+          type: "message",
+          sender: "system",
+        });
+
+        await aiResponseMessage.save();
+        const aiResponseemitData = {
+          _id: aiResponseMessage._id,
+          group_id,
+          type: "message",
+          sender: "system",
+          message: aiResponseMessage.message,
+          timestamp: aiResponseMessage.timestamp,
+        };
+
+        await socketEmit({
+          group_id: groupEntry._id,
+          event: "new_message",
+          data: aiResponseemitData,
+        });
+      }
+      console.log(result);
+    } catch (error) {
+      console.log(error);
+    }
+
     // send message to socket
 
     // send user_id, group_id, message, unique_message_id to ai service, userEntry.userName
 
-    res.status(201).send({ group: groupEntry });
+    res.status(200).send({ status: "OKAY" });
   } catch (error) {
     console.error("error while sending message", error);
     res.status(400).send(error);
@@ -72,7 +110,7 @@ router.post("/group/ai-response", async (req, res) => {
 
     await newMessage.save();
 
-    res.status(201).send({ group: groupEntry });
+    res.status(200).send({ group: groupEntry });
   } catch (error) {
     console.error("error while receiving message from ai service", error);
     res.status(400).send(error);
@@ -100,7 +138,7 @@ router.get("/group/messages", async (req, res) => {
 
     console.log("messages", messages);
 
-    res.status(201).send({ messages });
+    res.status(200).send({ messages });
   } catch (error) {
     console.error("error while fetching messages", error);
     res.status(400).send(error);
@@ -123,7 +161,7 @@ router.get("/group/members", async (req, res) => {
 
     console.log("members", members);
 
-    res.status(201).send({
+    res.status(200).send({
       members: members.map((item) => {
         return {
           user_id: item.user_id._id,

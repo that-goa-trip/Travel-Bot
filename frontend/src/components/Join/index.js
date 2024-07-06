@@ -12,6 +12,7 @@ import Typography from "@mui/material/Typography";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { joinGroup } from "../../services/user";
 import AppContext from "../../context/AppContext";
+import Dora from "../../assets/dora.png";
 
 function Copyright(props) {
   return (
@@ -52,8 +53,8 @@ export default function SignInSide() {
     });
     if (result?.data?.group?._id && result?.data?.user?._id) {
       set_user_details({
-        user_id: result.data.user._id,
-        group_id: result.data.group._id,
+        user_id: result.data.user?._id,
+        group_id: result.data.group?._id,
         group_details: {
           name: result.data.group.name,
           createdAt: result.data.group.createdAt,
@@ -94,8 +95,8 @@ export default function SignInSide() {
               alignItems: "center",
             }}
           >
-            <Avatar sx={{ m: 1, bgcolor: "#89CFF0" }}>
-              <LockOutlinedIcon />
+            <Avatar sx={{ m: 1, bgcolor: "#89CFF0" }} src={Dora}>
+              {/* <LockOutlinedIcon /> */}
             </Avatar>
             <Typography component="h1" variant="h5">
               Join Group

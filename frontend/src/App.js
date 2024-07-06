@@ -4,6 +4,7 @@ import "./App.css";
 import AppContext from "./context/AppContext";
 import Join from "./components/Join";
 import Group from "./components/Group";
+import PubSubProvider from "./utils/PubSub/Provider";
 
 function App() {
   const [user_details, set_user_details] = useState(null);
@@ -18,14 +19,16 @@ function App() {
   console.log(user_details);
   return (
     <AppContext.Provider value={contextValue}>
-      <div className="App">
-        {/* <Join /> */}
-        {!user_details || !user_details.user_id || !user_details.group_id ? (
-          <Join />
-        ) : (
-          <Group />
-        )}
-      </div>
+      <PubSubProvider>
+        <div className="App">
+          {/* <Join /> */}
+          {!user_details || !user_details.user_id || !user_details.group_id ? (
+            <Join />
+          ) : (
+            <Group />
+          )}
+        </div>
+      </PubSubProvider>
     </AppContext.Provider>
   );
 }

@@ -15,6 +15,9 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import config from "../../config.json";
 import AppContext from "../../context/AppContext";
+import usePubSub from "../../utils/PubSub";
+import Dora from "../../assets/dora.png";
+import moment from "moment";
 
 import { fetchMembers, sendMessage, fetchMessages } from "../../services/group";
 
@@ -24,6 +27,8 @@ import SendIcon from "@mui/icons-material/Send";
 
 const Chat = () => {
   const socketRef = React.useRef(null);
+  const { publish } = usePubSub();
+
   const loadedFirstTime = React.useRef(null);
   const [page, setPage] = React.useState(1);
   const [limit, setLimit] = React.useState(20);
@@ -31,6 +36,8 @@ const Chat = () => {
   const [messages, setMessages] = React.useState([]);
   const [members, setMembers] = React.useState([]);
   const [message, setMessage] = React.useState("");
+  const [messagesContext, setMessagesContext] = React.useState([]);
+  const sendingMessage = React.useRef(null);
 
   React.useEffect(() => {
     console.log("here?");
@@ -52,8 +59,15 @@ const Chat = () => {
 
     socket.on("new_message", (data) => {
       console.log("new_message", data);
-      //   publish(socketEvents.new_message, data);
+      publish("new_message", data);
+      //   setMessages([...messages, data]);
     });
+
+    socket.on("new_member", (data) => {
+        console.log("new_member", data);
+        publish("new_member", data);
+        //   setMessages([...messages, data]);
+      });
 
     socketRef.current = socket;
   }, []);
@@ -75,8 +89,12 @@ const Chat = () => {
 
     // reverse this
     const messages = await fetchMessages({ user_id, group_id, page, limit });
-    if (messages?.data?.messages?.length) setMessages(messages.data.messages);
+    if (messages?.data?.messages?.length) {
+      const _data = messages.data.messages.reverse();
+      setMessages(_data);
+    }
   };
+  console.log("messages", messages);
 
   React.useEffect(() => {
     console.log("here?", user_details);
@@ -86,12 +104,79 @@ const Chat = () => {
   }, []);
 
   const handleSubmit = async () => {
-    await sendMessage({
-      user_id: user_details.user_id,
-      group_id: user_details.group_id,
-      message,
-    });
+    try {
+      if (sendingMessage.current) return;
+      sendingMessage.current = true;
+      const findUser = members.find(
+        (item) => item.user_id === user_details.user_id
+      );
+      const body = {
+        user_id: user_details.user_id,
+        group_id: user_details.group_id,
+        message,
+        messagesContext: [
+          {
+            role: "user",
+            content: `UserName: ${
+              findUser ? findUser.userName : ""
+            }, Message: ${message || ""}`,
+          },
+          ...messagesContext,
+        ],
+      };
+      setMessage("");
+      await sendMessage(body);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      sendingMessage.current = false;
+    }
   };
+
+  // Function to scroll to the bottom of the chat
+  const scrollToBottom = () => {
+    const element = document.getElementById("chat_list_container");
+    if (element) {
+      element.scrollTop = element.scrollHeight;
+    }
+  };
+
+  // Scroll to bottom whenever chatMessages changes
+  React.useEffect(() => {
+    scrollToBottom();
+    const _data = messages
+      .slice(-5)
+      .map((item) => {
+        return {
+          role: item?.user_id?.userName ? "user" : "assistant",
+          content: `UserName: ${
+            item?.user_id?.userName || "Dora"
+          }, Message: ${item?.message || ""}`,
+        };
+      })
+      .reverse();
+    setMessagesContext(_data);
+  }, [messages]);
+
+  const getInitials = (name) => {
+    const nameParts = name.split(" ");
+    const initials = nameParts.map((part) => part.charAt(0)).join("");
+    return initials.toUpperCase();
+  };
+
+  usePubSub(
+    "new_message",
+    React.useCallback((data) => {
+      setMessages((prev) => (prev?.length ? [...prev, data] : [data]));
+    }, [])
+  );
+
+  usePubSub(
+    "new_member",
+    React.useCallback((data) => {
+      setMembers((prev) => (prev?.length ? [...prev, data] : [data]));
+    }, [])
+  );
 
   return (
     <div>
@@ -111,10 +196,7 @@ const Chat = () => {
           <List>
             <ListItem button key="RemySharp">
               <ListItemIcon>
-                <Avatar
-                  alt="Remy Sharp"
-                  src="https://material-ui.com/static/images/avatar/1.jpg"
-                />
+                <Avatar alt="Remy Sharp" src={Dora} />
               </ListItemIcon>
               <ListItemText
                 primary={user_details?.group_details?.name || "No Name"}
@@ -129,13 +211,20 @@ const Chat = () => {
           <List>
             {members.map((item) => {
               return (
-                <ListItem button key="RemySharp">
-                  <ListItemIcon>
-                    <Avatar
-                      alt="Remy Sharp"
-                      src="https://material-ui.com/static/images/avatar/1.jpg"
-                    />
-                  </ListItemIcon>
+                <ListItem
+                  button
+                  key={user_details.user_id}
+                  style={
+                    user_details.user_id === item.user_id
+                      ? { backgroundColor: "#D3D3D3" }
+                      : {}
+                  }
+                >
+                  {/* <ListItemIcon> */}
+                  <Avatar>
+                    {item.userName ? getInitials(item.userName) : "NN"}
+                  </Avatar>
+                  {/* </ListItemIcon> */}
                   <ListItemText
                     primary={item?.userName || "No Name"}
                   ></ListItemText>
@@ -146,13 +235,16 @@ const Chat = () => {
           </List>
         </Grid>
         <Grid item xs={9}>
-          <List style={{ height: "80vh", overflowY: "auto" }}>
-            {messages.map((item) => {
+          <List
+            id="chat_list_container"
+            style={{ height: "80vh", overflowY: "auto" }}
+          >
+            {messages.map((item, idx) => {
               return (
-                <ListItem key={item._id}>
+                <ListItem key={idx}>
                   <Grid container>
                     <Grid item xs={12}>
-                      {item.user_id._id !== user_details.user_id ||
+                      {item?.user_id?._id !== user_details.user_id ||
                       item.sender === "system" ? (
                         <ReactMarkdown
                           children={item.message}
@@ -162,7 +254,7 @@ const Chat = () => {
                         <ListItemText
                           align={
                             item.sender === "system" ||
-                            item.user_id._id !== user_details.user_id
+                            item?.user_id?._id !== user_details.user_id
                               ? "left"
                               : "right"
                           }
@@ -187,12 +279,24 @@ const Chat = () => {
                       <ListItemText
                         align={
                           item.sender === "system" ||
-                          item.user_id._id !== user_details.user_id
+                          item?.user_id?._id !== user_details.user_id
                             ? "left"
                             : "right"
                         }
-                        secondary={item.timestamp}
+                        secondary={item?.user_id?.userName || "Dora"}
                       ></ListItemText>
+                      <ListItemText
+                        align={
+                          item.sender === "system" ||
+                          item?.user_id?._id !== user_details.user_id
+                            ? "left"
+                            : "right"
+                        }
+                      >
+                        <Typography style={{ fontSize: "12px", color: "#888" }}>
+                          {moment(item.timestamp).format("Do MMM, h:mm a")}
+                        </Typography>
+                      </ListItemText>
                     </Grid>
                   </Grid>
                 </ListItem>
