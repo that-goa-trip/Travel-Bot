@@ -16,6 +16,18 @@ Goal: Help the group with planning their trip
 
 Current Year: 2024
 
+Tools Available:
+- web_search
+- search_hotels
+- search_hotel_destination
+- get_airbnb_categories
+- search_airbnb
+Use appropriate tools to fetch the required information.
+Use web_search whenever you're not sure or you don't have correct information.
+
+Conversation Style:
+In front of every message you'll be provided with a UserName, you should remember the preferences of each of the users and respond accordingly.
+
 Must Required:
 You need to be conversational and most importantly you need to resolve disputes and navigate the group to a common consensus.
 Make sure you move forward in the convesrsation, and do not repeat your answers.
@@ -57,7 +69,6 @@ Do not mention this in every message. Remeber the itinerary and only mention it 
 Send thank-you notes for future bookings. 
 
 Do not include UserName: travel agent
-STRICLTY keep the responses short and to the point.
 """
 
 def add_system_prompt(messages, system_prompt):
@@ -69,10 +80,12 @@ def add_system_prompt(messages, system_prompt):
 
 def run_agent(messages):
     messages_for_gpt = add_system_prompt(messages, base_system_prompt)
+    print(messages_for_gpt)
     response = llm.chat.completions.create(
         model="gpt4o",
         messages=messages_for_gpt,
         tools=tools,
+        temperature=0,
         # tool_choice="required"
     )
     print(response)
@@ -83,6 +96,7 @@ def run_agent(messages):
             if response.choices[0].message.content:
                 return response.choices[0].message.content
         except Exception as e:
+            print(f"Error: {e}")
             content = "Oops, Something went wrong! Try again in sometime..."
             return content
     tool_request_responses = []
@@ -117,19 +131,21 @@ def run_agent(messages):
     {string_tool_request_responses}\n end the conversation with the information you've fetched."""
         
         system_prompt = f"""{tool_response_prompt} \n {base_system_prompt}"""
-        # print(messages, system_prompt)
+        print(messages, system_prompt)
         messages_for_gpt = add_system_prompt(messages, system_prompt)
-        # print(messages)
-        if tool_call_count < 2:
+        print(messages_for_gpt)
+        if tool_call_count < 3:
             response = llm.chat.completions.create(
                 model="gpt4o",
                 messages=messages_for_gpt,
                 tools=tools,
+                temperature=0,
             )
         else:
             response = llm.chat.completions.create(
                 model="gpt4o",
                 messages=messages_for_gpt,
+                temperature=0,
             )
 
         print(response)

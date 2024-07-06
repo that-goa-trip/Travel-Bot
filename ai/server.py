@@ -23,6 +23,7 @@ def process(data: dict):
         response = f"Oops, Something went wrong! Try again in sometime..."
 
     if "UserName: travel agent, Message:" in response:
+        response = response.replace("UserName: Dora, Message:", "")
         response = response.replace("UserName: travel agent, Message:", "")
     final_response = {"message": response}
     return json_response(final_response)

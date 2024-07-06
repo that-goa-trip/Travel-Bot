@@ -173,7 +173,8 @@ class ToolApis:
 
         headers = {
             "x-rapidapi-key": os.getenv("RAPIDAPI_API_KEY"),
-            "x-rapidapi-host": "airbnb19.p.rapidapi.com"
+            "x-rapidapi-host": "airbnb45.p.rapidapi.com"
+            # "x-rapidapi-host": "airbnb19.p.rapidapi.com"
         }
 
         response = requests.get(url, headers=headers, params=querystring)

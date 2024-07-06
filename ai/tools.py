@@ -36,14 +36,6 @@ tools = [
                         "type": "string",
                         "description": "Currency filter (e.g., INR)."
                     },
-                    "include_adjacency": {
-                        "type": "boolean",
-                        "description": "Include nearby places if there are few hotels in the selected location (optional)."
-                    },
-                    "children_number": {
-                        "type": "number",
-                        "description": "Number of children (optional)."
-                    },
                     "room_number": {
                         "type": "number",
                         "description": "Number of rooms."
@@ -60,22 +52,10 @@ tools = [
                         "type": "number",
                         "description": "Number of adults."
                     },
-                    "page_number": {
-                        "type": "number",
-                        "description": "Page number (optional)."
-                    },
                     "checkin_date": {
                         "type": "string",
                         "description": "Check-in date (format: yyyy-mm-dd)."
                     },
-                    "units": {
-                        "type": "string",
-                        "description": "Units of measurement for the search."
-                    },
-                    "children_ages": {
-                        "type": "string",
-                        "description": "Ages of children staying in the room, separated by commas (e.g., 5,0) (optional)."
-                    }
                 },
                 "required": [
                     "checkout_date",
@@ -169,78 +149,78 @@ tools = [
             "description": "Get currency information",
         },
     },
-    {
-        "type": "function",
-        "function": {
-            "name": "search_flights",
-            "description": "Search for flights and get flight details. Do this when user wants to search for flights.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "fromId": {
-                        "type": "string",
-                        "description": "Departure location ID obtained from searchDestination(Search Flight Location) endpoint in Flights collection as id."
-                    },
-                    "toId": {
-                        "type": "string",
-                        "description": "Arrival location ID obtained from searchDestination(Search Flight Location) endpoint in Flights collection as id."
-                    },
-                    "departDate": {
-                        "type": "string",
-                        "description": "Departure date in yyyy-mm-dd format."
-                    },
-                    "returnDate": {
-                        "type": "string",
-                        "description": "Return date in yyyy-mm-dd format (optional)."
-                    },
-                    "pageNo": {
-                        "type": "number",
-                        "description": "Page number for pagination (optional, default: 1)."
-                    },
-                    "adults": {
-                        "type": "number",
-                        "description": "Number of adult passengers (optional, default: 1)."
-                    },
-                    "children": {
-                        "type": "string",
-                        "description": "A comma-separated list of ages for children (optional)."
-                    },
-                    "sort": {
-                        "type": "string",
-                        "enum": ["BEST", "CHEAPEST", "FASTEST"],
-                        "description": "Sorting criteria for flights (optional)."
-                    },
-                    "cabinClass": {
-                        "type": "string",
-                        "enum": ["ECONOMY", "PREMIUM_ECONOMY", "BUSINESS", "FIRST"],
-                        "description": "Cabin class for flight search (optional)."
-                    },
-                    "currency_code": {
-                        "type": "string",
-                        "description": "Currency code (optional)."
-                    }
-                },
-                "required": ["fromId", "toId", "departDate"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "search_flight_destination",
-            "description": "Search for Flight destinations",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "Search query for names of locations, cities, districts, places, countries, counties, etc."
-                    }
-                },
-                "required": ["query"]
-            },
-        },
-    },
+    # {
+    #     "type": "function",
+    #     "function": {
+    #         "name": "search_flights",
+    #         "description": "Search for flights and get flight details. Do this when user wants to search for flights.",
+    #         "parameters": {
+    #             "type": "object",
+    #             "properties": {
+    #                 "fromId": {
+    #                     "type": "string",
+    #                     "description": "Departure location ID obtained from searchDestination(Search Flight Location) endpoint in Flights collection as id."
+    #                 },
+    #                 "toId": {
+    #                     "type": "string",
+    #                     "description": "Arrival location ID obtained from searchDestination(Search Flight Location) endpoint in Flights collection as id."
+    #                 },
+    #                 "departDate": {
+    #                     "type": "string",
+    #                     "description": "Departure date in yyyy-mm-dd format."
+    #                 },
+    #                 "returnDate": {
+    #                     "type": "string",
+    #                     "description": "Return date in yyyy-mm-dd format (optional)."
+    #                 },
+    #                 "pageNo": {
+    #                     "type": "number",
+    #                     "description": "Page number for pagination (optional, default: 1)."
+    #                 },
+    #                 "adults": {
+    #                     "type": "number",
+    #                     "description": "Number of adult passengers (optional, default: 1)."
+    #                 },
+    #                 "children": {
+    #                     "type": "string",
+    #                     "description": "A comma-separated list of ages for children (optional)."
+    #                 },
+    #                 "sort": {
+    #                     "type": "string",
+    #                     "enum": ["BEST", "CHEAPEST", "FASTEST"],
+    #                     "description": "Sorting criteria for flights (optional)."
+    #                 },
+    #                 "cabinClass": {
+    #                     "type": "string",
+    #                     "enum": ["ECONOMY", "PREMIUM_ECONOMY", "BUSINESS", "FIRST"],
+    #                     "description": "Cabin class for flight search (optional)."
+    #                 },
+    #                 "currency_code": {
+    #                     "type": "string",
+    #                     "description": "Currency code (optional)."
+    #                 }
+    #             },
+    #             "required": ["fromId", "toId", "departDate"]
+    #         }
+    #     }
+    # },
+    # {
+    #     "type": "function",
+    #     "function": {
+    #         "name": "search_flight_destination",
+    #         "description": "Search for Flight destinations",
+    #         "parameters": {
+    #             "type": "object",
+    #             "properties": {
+    #                 "query": {
+    #                     "type": "string",
+    #                     "description": "Search query for names of locations, cities, districts, places, countries, counties, etc."
+    #                 }
+    #             },
+    #             "required": ["query"]
+    #         },
+    #     },
+    # },
     {
         "type": "function",
         "function": {
@@ -257,17 +237,9 @@ tools = [
                         "type": "string",
                         "description": "Cursor for accessing properties on the next page (optional). Retrieve from previous page API call. Exclude for the first page."
                     },
-                    "minBeds": {
-                        "type": "number",
-                        "description": "Minimum number of beds required for a property (optional). Range: 1-8, default: 1."
-                    },
                     "minBedrooms": {
                         "type": "number",
                         "description": "Minimum number of bedrooms required for a property (optional). Range: 1-8, default: 1."
-                    },
-                    "minBathrooms": {
-                        "type": "number",
-                        "description": "Minimum number of bathrooms required for a property (optional). Range: 1-8, default: 1."
                     },
                     "priceMin": {
                         "type": "number",
@@ -277,55 +249,10 @@ tools = [
                         "type": "number",
                         "description": "Maximum price filter (optional)."
                     },
-                    "selfCheckin": {
-                        "type": "string",
-                        "description": "Filter for self check-in properties (optional).",
-                        "enum": [0, 1]
-                    },
-                    "instantBook": {
-                        "type": "string",
-                        "description": "Filter for properties with instant booking (optional).",
-                        "enum": [0, 1]
-                    },
-                    "allowsPets": {
-                        "type": "string",
-                        "description": "Filter for properties that allow pets (optional).",
-                        "enum": [0, 1]
-                    },
-                    "guestFavorite": {
-                        "type": "string",
-                        "description": "Filter for guest favorite properties (optional).",
-                        "enum": [0, 1]
-                    },
                     "flexibleCancellation": {
                         "type": "string",
                         "description": "Filter for properties with flexible cancellation policies (optional).",
                         "enum": [0, 1]
-                    },
-                    "typeOfPlace": {
-                        "type": "string",
-                        "description": "Filter for type of place (optional).",
-                        "enum": ["entire_home", "private_room"]
-                    },
-                    "accessibilityFeatures": {
-                        "type": "string",
-                        "description": "Filter for properties with accessibility features (optional)."
-                    },
-                    "locationFilter": {
-                        "type": "string",
-                        "description": "Filter for specific locations within the main location (optional)."
-                    },
-                    "propertyType": {
-                        "type": "string",
-                        "description": "Filter for property type (optional). Obtain available property types from Get Filters API."
-                    },
-                    "hostLanguage": {
-                        "type": "string",
-                        "description": "Language that the property owner is familiar with (optional). Obtain available host languages from Get Filters API."
-                    },
-                    "currency": {
-                        "type": "string",
-                        "description": "Currency code for search (optional). Obtain available currencies from Get Currency API."
                     },
                     "locale": {
                         "type": "string",
