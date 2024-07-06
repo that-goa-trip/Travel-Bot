@@ -1,15 +1,9 @@
 model_list:
-  - model_name: gpt-3.5-turbo # user-facing model alias
-    litellm_params: # all params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
-      model: "azure/gpt-35-turbo-uswest"
-      api_base: os.environ/OPENAI_BASE_URL
-      api_key: os.environ/OPENAI_API_KEY
-  - model_name: gpt-4 # user-facing model alias
-    litellm_params: # all params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
-      model: "azure/gpt-4-1106-preview-uswest"
-      api_base: os.environ/OPENAI_BASE_URL
-      api_key: os.environ/OPENAI_API_KEY
+  # - model_name: gpt-4o # user-facing model alias
+  #   litellm_params: # all params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
+  #     model: "openai/gpt4o"
+  #     api_key: os.environ/OPENAI_API_KEY
   - model_name: llama
     litellm_params:
       model: "groq/llama3-8b-8192"
-      api_key: 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
+      api_key: os.environ/GROQ_API_KEY
