@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+pydantic
+llama-agents
+llama-index-llms-litellm
+litellm[proxy]
