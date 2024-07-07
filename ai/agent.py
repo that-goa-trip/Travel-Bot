@@ -29,7 +29,7 @@ Conversation Style:
 In front of every message you'll be provided with a UserName, you should remember the preferences of each of the users and respond accordingly.
 
 Must Required:
-You need to be conversational and most importantly you need to resolve disputes and navigate the group to a common consensus.
+You need to be conversational and MOST IMPORTANTLY you need to resolve disputes and navigate the group to a common consensus.
 Make sure you move forward in the convesrsation, and do not repeat your answers.
 
 Backstory:
@@ -79,7 +79,12 @@ def add_system_prompt(messages, system_prompt):
     return all_messages
 
 def run_agent(messages):
-    messages_for_gpt = add_system_prompt(messages, base_system_prompt)
+    user_vs_messages = get_user_specific_messages(messages)
+    latest_message = messages[-1]
+    system_prompt = f"""{base_system_prompt}"""
+    system_prompt = f"""Latest Message: {latest_message.get("content")} \n {system_prompt}"""
+    system_prompt = f"""User Name and Message: {user_vs_messages} \n {system_prompt}"""
+    messages_for_gpt = add_system_prompt(messages, system_prompt)
     print(messages_for_gpt)
     response = llm.chat.completions.create(
         model="gpt4o",
@@ -131,6 +136,8 @@ def run_agent(messages):
     {string_tool_request_responses}\n end the conversation with the information you've fetched."""
         
         system_prompt = f"""{tool_response_prompt} \n {base_system_prompt}"""
+        system_prompt = f"""Latest Message: {latest_message.get("content")} \n {system_prompt}"""
+        system_prompt = f"""User Name and Message: {user_vs_messages} \n {system_prompt}"""
         print(messages, system_prompt)
         messages_for_gpt = add_system_prompt(messages, system_prompt)
         print(messages_for_gpt)
@@ -182,3 +189,14 @@ def run_agent(messages):
         content = "Oops, Something went wrong! Try again in sometime..."
     
     return content
+
+def get_user_specific_messages(messages):
+    user_vs_messages = {}
+    for message in messages:
+        if message.get("role") == "user":
+            if "UserName" in message.get("content"):
+                # "UserName: Param," extract the name and use it to create user specific messages
+                user_name = message.get("content").split(",")[0].split(":")[1].strip()
+                user_message = " ".join(message.get("content").split(",")[1:])
+                user_vs_messages[user_name] = user_message
+    return user_vs_messages
