@@ -39,6 +39,27 @@ const Chat = () => {
   const [messagesContext, setMessagesContext] = React.useState([]);
   const sendingMessage = React.useRef(null);
 
+  const getMessageContext = () => {
+    let triggerBot = false;
+    const lastThreeMessages = messages.slice(-3).reverse();
+    console.log(lastThreeMessages);
+    if (!lastThreeMessages.find((item) => item.sender !== "user")) {
+      triggerBot = true;
+    }
+    if (message.toLowerCase().includes("dora")) triggerBot = true;
+    return {
+      context: messages.slice(-20).map((item) => {
+        return {
+          role: item?.user_id?.userName ? "user" : "assistant",
+          content: `UserName: ${item?.user_id?.userName || "Dora"}, Message: ${
+            item?.message || ""
+          }`,
+        };
+      }),
+      triggerBot,
+    };
+  };
+
   React.useEffect(() => {
     console.log("here?");
     if (socketRef.current) return;
@@ -64,10 +85,10 @@ const Chat = () => {
     });
 
     socket.on("new_member", (data) => {
-        console.log("new_member", data);
-        publish("new_member", data);
-        //   setMessages([...messages, data]);
-      });
+      console.log("new_member", data);
+      publish("new_member", data);
+      //   setMessages([...messages, data]);
+    });
 
     socketRef.current = socket;
   }, []);
@@ -110,19 +131,24 @@ const Chat = () => {
       const findUser = members.find(
         (item) => item.user_id === user_details.user_id
       );
+      const { triggerBot, context } = getMessageContext();
+      console.log("triggerBot, context", triggerBot, context);
       const body = {
         user_id: user_details.user_id,
         group_id: user_details.group_id,
         message,
-        messagesContext: [
-          {
-            role: "user",
-            content: `UserName: ${
-              findUser ? findUser.userName : ""
-            }, Message: ${message || ""}`,
-          },
-          ...messagesContext,
-        ],
+        ...(triggerBot && {
+          messagesContext: [
+            ...context,
+            {
+              role: "user",
+              content: `UserName: ${
+                findUser ? findUser.userName : ""
+              }, Message: ${message || ""}`,
+            },
+          ],
+        }),
+        triggerBot
       };
       setMessage("");
       await sendMessage(body);
@@ -144,17 +170,7 @@ const Chat = () => {
   // Scroll to bottom whenever chatMessages changes
   React.useEffect(() => {
     scrollToBottom();
-    const _data = messages
-      .slice(-5)
-      .map((item) => {
-        return {
-          role: item?.user_id?.userName ? "user" : "assistant",
-          content: `UserName: ${
-            item?.user_id?.userName || "Dora"
-          }, Message: ${item?.message || ""}`,
-        };
-      })
-      .reverse();
+    const _data = messages.slice(-20).reverse();
     setMessagesContext(_data);
   }, [messages]);
 

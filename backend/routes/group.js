@@ -8,7 +8,8 @@ const router = express.Router();
 // Send message
 router.post("/group/send-message", async (req, res) => {
   try {
-    const { user_id, group_id, message, messagesContext } = req.body;
+    const { user_id, group_id, message, messagesContext, triggerBot } =
+      req.body;
     let userEntry = await user.findById(user_id);
     if (!userEntry) throw new Error("User not found");
     let groupEntry = await group.findById(group_id);
@@ -44,40 +45,42 @@ router.post("/group/send-message", async (req, res) => {
       data: emitData,
     });
 
-    try {
-      const result = await axios.post(
-        `https://eagerly-natural-ox.ngrok-free.app/process`,
-        {
-          message_history: messagesContext,
+    if (triggerBot) {
+      try {
+        const result = await axios.post(
+          `https://eagerly-natural-ox.ngrok-free.app/process`,
+          {
+            message_history: messagesContext,
+          }
+        );
+        if (result?.data?.message) {
+          const aiResponseMessage = new groupMessage({
+            message: result.data.message,
+            group_id,
+            type: "message",
+            sender: "system",
+          });
+
+          await aiResponseMessage.save();
+          const aiResponseemitData = {
+            _id: aiResponseMessage._id,
+            group_id,
+            type: "message",
+            sender: "system",
+            message: aiResponseMessage.message,
+            timestamp: aiResponseMessage.timestamp,
+          };
+
+          await socketEmit({
+            group_id: groupEntry._id,
+            event: "new_message",
+            data: aiResponseemitData,
+          });
         }
-      );
-      if (result?.data?.message) {
-        const aiResponseMessage = new groupMessage({
-          message: result.data.message,
-          group_id,
-          type: "message",
-          sender: "system",
-        });
-
-        await aiResponseMessage.save();
-        const aiResponseemitData = {
-          _id: aiResponseMessage._id,
-          group_id,
-          type: "message",
-          sender: "system",
-          message: aiResponseMessage.message,
-          timestamp: aiResponseMessage.timestamp,
-        };
-
-        await socketEmit({
-          group_id: groupEntry._id,
-          event: "new_message",
-          data: aiResponseemitData,
-        });
+        console.log(result);
+      } catch (error) {
+        console.log(error);
       }
-      console.log(result);
-    } catch (error) {
-      console.log(error);
     }
 
     // send message to socket

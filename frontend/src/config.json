@@ -1,4 +1,4 @@
 {
-  "API_URL": "https://param-mac-api.localtunnel.in",
-  "SOCKET_URL": "https://param-mac-socket.localtunnel.in"
+  "API_URL": "http://localhost:3000",
+  "SOCKET_URL": "http://localhost:8080"
 }
