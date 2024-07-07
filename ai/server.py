@@ -25,6 +25,8 @@ def process(data: dict):
     if "UserName: travel agent, Message:" in response:
         response = response.replace("UserName: Dora, Message:", "")
         response = response.replace("UserName: travel agent, Message:", "")
+    if "UserName: Dora, Message:" in response:
+        response = response.replace("UserName: Dora, Message: ", "")
     final_response = {"message": response}
     return json_response(final_response)
 
